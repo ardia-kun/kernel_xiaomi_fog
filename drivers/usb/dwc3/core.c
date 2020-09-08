@@ -137,6 +137,9 @@ void dwc3_set_prtcap(struct dwc3 *dwc, u32 mode)
 
 void dwc3_en_sleep_mode(struct dwc3 *dwc)
 {
+	struct dwc3 *dwc = work_to_dwc(work);
+	unsigned long flags;
+	int ret;
 	u32 reg;
 
 	if (dwc->dis_enblslpm_quirk)
@@ -189,6 +192,11 @@ void dwc3_en_sleep_mode(struct dwc3 *dwc)
 				otg_set_vbus(dwc->usb2_phy->otg, true);
 			phy_set_mode(dwc->usb2_generic_phy, PHY_MODE_USB_HOST);
 			phy_set_mode(dwc->usb3_generic_phy, PHY_MODE_USB_HOST);
+			if (dwc->dis_split_quirk) {
+				reg = dwc3_readl(dwc->regs, DWC3_GUCTL3);
+				reg |= DWC3_GUCTL3_SPLITDISABLE;
+				dwc3_writel(dwc->regs, DWC3_GUCTL3, reg);
+			}
 		}
 		break;
 	case DWC3_GCTL_PRTCAP_DEVICE:
@@ -1462,21 +1470,8 @@ static void dwc3_get_properties(struct dwc3 *dwc)
 	dwc->dis_metastability_quirk = device_property_read_bool(dev,
 				"snps,dis_metastability_quirk");
 
-	dwc->gen2_tx_de_emph = -1;
-	device_property_read_u32(dev, "snps,gen2-tx-de-emph",
-			&dwc->gen2_tx_de_emph);
-
-	dwc->gen2_tx_de_emph1 = -1;
-	device_property_read_u32(dev, "snps,gen2-tx-de-emph1",
-			&dwc->gen2_tx_de_emph1);
-
-	dwc->gen2_tx_de_emph2 = -1;
-	device_property_read_u32(dev, "snps,gen2-tx-de-emph2",
-			&dwc->gen2_tx_de_emph2);
-
-	dwc->gen2_tx_de_emph3 = -1;
-	device_property_read_u32(dev, "snps,gen2-tx-de-emph3",
-			&dwc->gen2_tx_de_emph3);
+	dwc->dis_split_quirk = device_property_read_bool(dev,
+				"snps,dis-split-quirk");
 
 	dwc->lpm_nyet_threshold = lpm_nyet_threshold;
 	dwc->tx_de_emphasis = tx_de_emphasis;
@@ -2056,10 +2051,26 @@ runtime_set_active:
 
 	return 0;
 }
+
+static void dwc3_complete(struct device *dev)
+{
+	struct dwc3	*dwc = dev_get_drvdata(dev);
+	u32		reg;
+
+	if (dwc->current_dr_role == DWC3_GCTL_PRTCAP_HOST &&
+			dwc->dis_split_quirk) {
+		reg = dwc3_readl(dwc->regs, DWC3_GUCTL3);
+		reg |= DWC3_GUCTL3_SPLITDISABLE;
+		dwc3_writel(dwc->regs, DWC3_GUCTL3, reg);
+	}
+}
+#else
+#define dwc3_complete NULL
 #endif /* CONFIG_PM_SLEEP */
 
 static const struct dev_pm_ops dwc3_dev_pm_ops = {
 	SET_SYSTEM_SLEEP_PM_OPS(dwc3_suspend, dwc3_resume)
+	.complete = dwc3_complete,
 	SET_RUNTIME_PM_OPS(dwc3_runtime_suspend, dwc3_runtime_resume,
 			dwc3_runtime_idle)
 };
