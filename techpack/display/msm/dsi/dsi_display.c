@@ -7256,15 +7256,9 @@ int dsi_display_set_mode(struct dsi_display *display,
 		goto error;
 	}
 
-#ifdef CONFIG_TARGET_PROJECT_K7T
-	if (display->panel->panel_initialized && (adj_mode.timing.refresh_rate == 90)) {
-		dsi_set_backlight_control(display->panel, &adj_mode);
-	}
-#endif
-
-	DSI_INFO("mdp_transfer_time_us=%d us\n",
+	DSI_DEBUG("mdp_transfer_time_us=%d us\n",
 			adj_mode.priv_info->mdp_transfer_time_us);
-	DSI_INFO("hactive= %d,vactive= %d,fps=%d\n",
+	DSI_DEBUG("hactive= %d,vactive= %d,fps=%d\n",
 			timing.h_active, timing.v_active,
 			timing.refresh_rate);
 
