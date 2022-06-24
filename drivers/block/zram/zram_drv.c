@@ -1337,6 +1337,7 @@ out:
 	return ret;
 }
 
+
 #ifdef CONFIG_ZRAM_ENTROPY
 static inline u32 ilog2_w(u64 n)
 {
@@ -1394,7 +1395,7 @@ compress_again:
 
 #ifdef CONFIG_ZRAM_ENTROPY
 	/* Just save this page uncompressible */
-	if (shannon_entropy((const u8 *)src) > sysctl_zram_entropy_threshold)
+	if (shannon_entropy((const u8 *)src) > CONFIG_ZRAM_ENTROPY_THRESHOLD)
 		comp_len = PAGE_SIZE;
 	else
 		ret = zcomp_compress(zstrm, src, &comp_len);
