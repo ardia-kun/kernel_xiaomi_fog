@@ -7,7 +7,7 @@ NAME=Swordx-Juzumaru
 sudo apt update && sudo apt install -y bc cpio nano bison ca-certificates curl flex gcc git libc6-dev libssl-dev openssl python-is-python3 ssh wget zip zstd sudo make clang gcc-arm-linux-gnueabi software-properties-common build-essential libarchive-tools gcc-aarch64-linux-gnu
 
 # Using Rastamod-Clang
-wget https://github.com/kutemeikito/RastaMod69-Clang/releases/download/RastaMod69-Clang-20.0.0-release/RastaMod69-Clang-20.0.0.tar.gz
+# wget https://github.com/kutemeikito/RastaMod69-Clang/releases/download/RastaMod69-Clang-20.0.0-release/RastaMod69-Clang-20.0.0.tar.gz
 # Move & Extract Clang
 mkdir clang && tar -xf RastaMod69-Clang-20.0.0.tar.gz -C clang && rm -rf RastaMod69-Clang-20.0.0.tar.gz
 
