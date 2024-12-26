@@ -19,9 +19,8 @@
 #endif
 
 static spinlock_t susfs_spin_lock;
-#ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
-static const char *magic_mount_workdir = "/debug_ramdisk/workdir";
-#endif
+#define MAGIC_MOUNT_WORKDIR "/debug_ramdisk/workdir"
+static const size_t strlen_debug_ramdisk_workdir = strlen(MAGIC_MOUNT_WORKDIR);
 
 extern bool susfs_is_current_ksu_domain(void);
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
@@ -237,13 +236,7 @@ void susfs_auto_add_sus_ksu_default_mount(const char __user *to_pathname) {
 	if (!pathname) {
 		SUSFS_LOGE("no enough memory\n");
 		return;
-	}
-	// Here we need to re-retrieve the struct path as we want the new struct path, not the old one
-	if (strncpy_from_user(pathname, to_pathname, SUSFS_MAX_LEN_PATHNAME-1) < 0) {
-		SUSFS_LOGE("strncpy_from_user()\n");
-		goto out_free_pathname;
-		return;
-	}
+
 	if ((!strncmp(pathname, "/data/adb/modules", 17) ||
 		 !strncmp(pathname, "/debug_ramdisk", 14) ||
 		 !strncmp(pathname, "/system", 7) ||
@@ -257,17 +250,13 @@ void susfs_auto_add_sus_ksu_default_mount(const char __user *to_pathname) {
 	goto out_free_pathname;
 set_inode_sus_mount:
 	inode = path.dentry->d_inode;
-	if (!inode) {
-		goto out_path_put;
-		return;
-	}
+	if (!inode) return;
+	spin_lock(&inode->i_lock);
 	if (!(inode->i_state & INODE_STATE_SUS_MOUNT)) {
-		spin_lock(&inode->i_lock);
 		inode->i_state |= INODE_STATE_SUS_MOUNT;
-		spin_unlock(&inode->i_lock);
 		SUSFS_LOGI("set SUS_MOUNT inode state for default KSU mount path '%s'\n", pathname);
 	}
-out_path_put:
+	spin_unlock(&inode->i_lock);
 	path_put(&path);
 out_free_pathname:
 	kfree(pathname);
@@ -552,16 +541,7 @@ void susfs_auto_add_try_umount_for_bind_mount(struct path *path) {
 	struct st_susfs_try_umount_list *cursor = NULL, *temp = NULL;
 	struct st_susfs_try_umount_list *new_list = NULL;
 	char *pathname = NULL, *dpath = NULL;
-#ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
 	bool is_magic_mount_path = false;
-#endif
-
-#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-	if (path->dentry->d_inode->i_state & INODE_STATE_SUS_KSTAT) {
-		SUSFS_LOGI("skip adding path to try_umount list as its inode is flagged INODE_STATE_SUS_KSTAT already\n");
-		return;
-	}
-#endif
 
 	pathname = kmalloc(PAGE_SIZE, GFP_KERNEL);
 	if (!pathname) {
@@ -575,21 +555,15 @@ void susfs_auto_add_try_umount_for_bind_mount(struct path *path) {
 		goto out_free_pathname;
 	}
 
-#ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
-	if (strstr(dpath, magic_mount_workdir)) {
+	if (strstr(dpath, MAGIC_MOUNT_WORKDIR)) {
 		is_magic_mount_path = true;
 	}
-#endif
 
 	list_for_each_entry_safe(cursor, temp, &LH_TRY_UMOUNT_PATH, list) {
-#ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
 		if (is_magic_mount_path && strstr(dpath, cursor->info.target_pathname)) {
-			goto out_free_pathname;
-		}
-#endif
-		if (unlikely(!strcmp(dpath, cursor->info.target_pathname))) {
-			SUSFS_LOGE("target_pathname: '%s', ino: %lu, is already created in LH_TRY_UMOUNT_PATH\n",
-							dpath, path->dentry->d_inode->i_ino);
+				goto out_free_pathname;
+		} else if (unlikely(!strcmp(dpath, cursor->info.target_pathname))) {
+			SUSFS_LOGE("target_pathname: '%s' is already created in LH_TRY_UMOUNT_PATH\n", dpath);
 			goto out_free_pathname;
 		}
 	}
@@ -600,17 +574,11 @@ void susfs_auto_add_try_umount_for_bind_mount(struct path *path) {
 		goto out_free_pathname;
 	}
 
-#ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
 	if (is_magic_mount_path) {
-		strncpy(new_list->info.target_pathname, dpath + strlen(magic_mount_workdir), SUSFS_MAX_LEN_PATHNAME-1);
-		goto out_add_to_list;
+		strncpy(new_list->info.target_pathname, dpath + strlen_debug_ramdisk_workdir, SUSFS_MAX_LEN_PATHNAME-1);
+	} else {
+		strncpy(new_list->info.target_pathname, dpath, SUSFS_MAX_LEN_PATHNAME-1);
 	}
-#endif
-	strncpy(new_list->info.target_pathname, dpath, SUSFS_MAX_LEN_PATHNAME-1);
-
-#ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
-out_add_to_list:
-#endif
 
 	new_list->info.mnt_mode = TRY_UMOUNT_DETACH;
 
