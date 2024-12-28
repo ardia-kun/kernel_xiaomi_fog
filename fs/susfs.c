@@ -19,8 +19,9 @@
 #endif
 
 static spinlock_t susfs_spin_lock;
-#define MAGIC_MOUNT_WORKDIR "/debug_ramdisk/workdir"
-static const size_t strlen_debug_ramdisk_workdir = strlen(MAGIC_MOUNT_WORKDIR);
+#ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
+static const char *magic_mount_workdir = "/debug_ramdisk/workdir";
+#endif
 
 extern bool susfs_is_current_ksu_domain(void);
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
@@ -236,7 +237,13 @@ void susfs_auto_add_sus_ksu_default_mount(const char __user *to_pathname) {
 	if (!pathname) {
 		SUSFS_LOGE("no enough memory\n");
 		return;
-
+	}
+	// Here we need to re-retrieve the struct path as we want the new struct path, not the old one
+	if (strncpy_from_user(pathname, to_pathname, SUSFS_MAX_LEN_PATHNAME-1) < 0) {
+		SUSFS_LOGE("strncpy_from_user()\n");
+		goto out_free_pathname;
+		return;
+	}
 	if ((!strncmp(pathname, "/data/adb/modules", 17) ||
 		 !strncmp(pathname, "/debug_ramdisk", 14) ||
 		 !strncmp(pathname, "/system", 7) ||
@@ -250,13 +257,17 @@ void susfs_auto_add_sus_ksu_default_mount(const char __user *to_pathname) {
 	goto out_free_pathname;
 set_inode_sus_mount:
 	inode = path.dentry->d_inode;
-	if (!inode) return;
-	spin_lock(&inode->i_lock);
+	if (!inode) {
+		goto out_path_put;
+		return;
+	}
 	if (!(inode->i_state & INODE_STATE_SUS_MOUNT)) {
+		spin_lock(&inode->i_lock);
 		inode->i_state |= INODE_STATE_SUS_MOUNT;
+		spin_unlock(&inode->i_lock);
 		SUSFS_LOGI("set SUS_MOUNT inode state for default KSU mount path '%s'\n", pathname);
 	}
-	spin_unlock(&inode->i_lock);
+out_path_put:
 	path_put(&path);
 out_free_pathname:
 	kfree(pathname);
@@ -565,7 +576,7 @@ void susfs_auto_add_try_umount_for_bind_mount(struct path *path) {
 	}
 
 #ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
-	if (strstr(dpath, MAGIC_MOUNT_WORKDIR)) {
+	if (strstr(dpath, magic_mount_workdir)) {
 		is_magic_mount_path = true;
 	}
 #endif
@@ -591,7 +602,7 @@ void susfs_auto_add_try_umount_for_bind_mount(struct path *path) {
 
 #ifdef CONFIG_KSU_SUSFS_HAS_MAGIC_MOUNT
 	if (is_magic_mount_path) {
-		strncpy(new_list->info.target_pathname, dpath + strlen_debug_ramdisk_workdir, SUSFS_MAX_LEN_PATHNAME-1);
+		strncpy(new_list->info.target_pathname, dpath + strlen(magic_mount_workdir), SUSFS_MAX_LEN_PATHNAME-1);
 		goto out_add_to_list;
 	}
 #endif
