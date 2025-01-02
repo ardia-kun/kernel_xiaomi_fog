@@ -24,6 +24,8 @@ export KBUILD_BUILD_HOST=ubuntu
     # Package
     git clone --depth=1 https://github.com/ardia-kun/AnyKernel3-680 -b ksu AnyKernel3
     cp -R out/arch/arm64/boot/Image.gz AnyKernel3/Image.gz
+    cp -R out/arch/arm64/boot/dtbo.img AnyKernel3/dtbo.img
+    
     # Zip it and upload it
     cd AnyKernel3
     zip -r9 $NAME+KSU-"$BUILDDATE" . -x ".git*" -x "README.md" -x "*.zip"
