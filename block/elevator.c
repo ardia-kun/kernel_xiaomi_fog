@@ -989,8 +989,6 @@ int elevator_init_mq(struct request_queue *q)
 
 	WARN_ON_ONCE(test_bit(QUEUE_FLAG_REGISTERED, &q->queue_flags));
 
-	if (unlikely(q->elevator))
-		goto out_unlock;
 	if (IS_ENABLED(CONFIG_MQ_IOSCHED_SSG)) {
 		e = elevator_get(q, "ssg", false);
 		if (!e)
