@@ -151,7 +151,6 @@ static void devfreq_update_boosts(struct boost_dev *b, unsigned long state)
 			       df->profile->freq_table[0];
 		df->max_boost = state & BIT(MAX_BOOST);
 	}
-	update_devfreq(df);
 	mutex_unlock(&df->lock);
 }
 
