@@ -4227,13 +4227,6 @@ static bool sort_page(struct lruvec *lruvec, struct page *page, struct scan_cont
 		return true;
 	}
 
-	/* ineligible */
-	if (zone > sc->reclaim_idx || skip_cma(page, sc)) {
-		gen = page_inc_gen(lruvec, page, false);
-		list_move_tail(&page->lru, &lrugen->lists[gen][type][zone]);
-		return true;
-	}
-
 	/* waiting for writeback */
 	if (PageLocked(page) || PageWriteback(page) ||
 	    (type == LRU_GEN_FILE && PageDirty(page))) {
