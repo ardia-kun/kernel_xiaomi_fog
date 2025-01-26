@@ -4767,7 +4767,6 @@ static int cfq_init_queue(struct request_queue *q, struct elevator_type *e)
 	cfqd->cfq_slice_idle = cfq_slice_idle;
 	cfqd->cfq_max_async_dispatch = cfq_max_async_dispatch;
 	cfqd->cfq_group_idle = cfq_group_idle;
-	cfqd->cfq_rt_idle_only = cfq_rt_idle_only;
 	cfqd->cfq_latency = 1;
 	cfqd->hw_tag = -1;
 	/*
@@ -4928,11 +4927,8 @@ static struct elv_fs_entry cfq_attrs[] = {
 	CFQ_ATTR(slice_idle_us),
 	CFQ_RO_ATTR(group_idle),
 	CFQ_ATTR(group_idle_us),
-	CFQ_ATTR(rt_idle_only),
-	CFQ_ATTR(low_latency),
 	CFQ_ATTR(target_latency),
 	CFQ_ATTR(target_latency_us),
-	CFQ_ATTR(max_async_dispatch),
 	__ATTR_NULL
 };
 
