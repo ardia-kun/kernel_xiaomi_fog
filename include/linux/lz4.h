@@ -40,6 +40,7 @@
 
 #ifndef __LZ4_H__
 #define __LZ4_H__
+#endif
 
 #include <linux/types.h>
 #include <linux/string.h>	 /* memset, memcpy */
