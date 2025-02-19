@@ -1,6 +1,6 @@
 export TZ='Asia/Jakarta'
 BUILDDATE=$(date +%Y%m%d)
-NAME=Swordx-Yasutsuna
+NAME=Swordx-Shisui
 # BUILDTIME=$(date +%H%M)
 
 # Install dependencies
