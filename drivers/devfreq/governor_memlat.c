@@ -218,7 +218,6 @@ static int gov_suspend(struct devfreq *df)
 		devfreq_monitor_suspend(df);
 
 	mutex_lock(&df->lock);
-	update_devfreq(df);
 	mutex_unlock(&df->lock);
 
 	node->resume_freq = max(prev_freq, 1UL);
@@ -232,7 +231,6 @@ static int gov_resume(struct devfreq *df)
 	struct memlat_hwmon *hw = node->hw;
 
 	mutex_lock(&df->lock);
-	update_devfreq(df);
 	mutex_unlock(&df->lock);
 
 	node->resume_freq = 0;

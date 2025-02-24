@@ -356,7 +356,6 @@ static void memlat_monitor_work(struct work_struct *work)
 
 		df = mon->hw.df;
 		mutex_lock(&df->lock);
-		err = update_devfreq(df);
 		if (err < 0)
 			dev_err(mon->hw.dev, "Memlat update failed: %d\n", err);
 		mutex_unlock(&df->lock);

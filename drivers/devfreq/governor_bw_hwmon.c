@@ -507,7 +507,6 @@ int update_bw_hwmon(struct bw_hwmon *hwmon)
 	devfreq_monitor_stop(df);
 
 	mutex_lock(&df->lock);
-	ret = update_devfreq(df);
 	if (ret < 0)
 		dev_err(df->dev.parent,
 			"Unable to update freq on request! (%d)\n", ret);
@@ -663,7 +662,6 @@ static int gov_suspend(struct devfreq *df)
 	stop_monitor(df, false);
 
 	mutex_lock(&df->lock);
-	update_devfreq(df);
 	mutex_unlock(&df->lock);
 
 	node->resume_freq = resume_freq;
@@ -680,7 +678,6 @@ static int gov_resume(struct devfreq *df)
 		return -EPERM;
 
 	mutex_lock(&df->lock);
-	update_devfreq(df);
 	mutex_unlock(&df->lock);
 
 	node->resume_freq = 0;

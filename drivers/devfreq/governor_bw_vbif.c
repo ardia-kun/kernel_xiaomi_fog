@@ -58,7 +58,6 @@ int devfreq_vbif_update_bw(void)
 	mutex_lock(&df_lock);
 	if (df) {
 		mutex_lock(&df->lock);
-		ret = update_devfreq(df);
 		mutex_unlock(&df->lock);
 	}
 	mutex_unlock(&df_lock);
